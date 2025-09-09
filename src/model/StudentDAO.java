@@ -306,14 +306,12 @@ public class StudentDAO implements Student {
                     break;
                 }
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
             disConnect();
         }
     }
-
 
     /**
      * 전체 학생 데이터를 특정 조건에 따라 정렬하여 출력합니다.
@@ -324,8 +322,56 @@ public class StudentDAO implements Student {
      * @param sortNum 정렬 조건을 나타내는 번호
      */
     public void totalSearch(int sortNum) {
-    }
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
 
+        try {
+            conn = DBUtil.getConnection();
+
+            // 정렬 조건에 따른 SQL
+            String sql = "SELECT * FROM student";
+            switch (sortNum) {
+                case 1: // 이름순
+                    sql += " ORDER BY name ASC";
+                    break;
+                case 2: // 학번순
+                    sql += " ORDER BY sno ASC";
+                    break;
+                case 3: // 총점순 (국어+영어+수학+과학)
+                    sql += " ORDER BY (korean + english + math + science) DESC";
+                    break;
+                default:
+                    System.out.println("정렬 조건이 올바르지 않습니다.");
+                    return;
+            }
+
+            pstmt = conn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+
+            System.out.println("학번\t이름\t국어\t영어\t수학\t과학\t총점");
+            System.out.println("--------------------------------------------------");
+            while (rs.next()) {
+                String sno = rs.getString("sno");
+                String name = rs.getString("name");
+                int korean = rs.getInt("korean");
+                int english = rs.getInt("english");
+                int math = rs.getInt("math");
+                int science = rs.getInt("science");
+                int total = korean + english + math + science;
+
+                System.out.printf("%s\t%s\t%d\t%d\t%d\t%d\t%d\n",
+                        sno, name, korean, english, math, science, total);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            try { if (rs != null) rs.close(); } catch (Exception e) {}
+            try { if (pstmt != null) pstmt.close(); } catch (Exception e) {}
+            try { if (conn != null) conn.close(); } catch (Exception e) {}
+        }
+    }
 
     /**
      * 특정 학생 데이터를 검색하여 출력합니다.
@@ -337,7 +383,27 @@ public class StudentDAO implements Student {
      */
     @Override
     public void search(String searchNum) {
+        boolean found = false;
+
+        for (StudentVO s : studentlist) {
+            if (s.getSno().equals(searchNum)) { // 학번이 일치하면
+                System.out.println("학번\t이름\t국어\t영어\t수학\t과학\t총점");
+                System.out.println("--------------------------------------------------");
+                int total = s.getKorean() + s.getEnglish() + s.getMath() + s.getScience();
+                System.out.printf("%s\t%s\t%d\t%d\t%d\t%d\t%d\n",
+                        s.getSno(), s.getName(),
+                        s.getKorean(), s.getEnglish(), s.getMath(), s.getScience(),
+                        total);
+                found = true;
+                break; // 학생을 찾았으므로 반복 종료
+            }
+        }
+
+        if (!found) {
+            System.out.println("검색된 학생이 없습니다.");
+        }
     }
+
 
 
     /**
@@ -352,6 +418,9 @@ public class StudentDAO implements Student {
      */
     @Override
     public void sort(int sortNum) {
+
+
+
     }
 
 
